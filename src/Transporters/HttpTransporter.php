@@ -10,6 +10,7 @@ use JsonException;
 use OpenAI\Contracts\TransporterContract;
 use OpenAI\Enums\Transporter\ContentType;
 use OpenAI\Exceptions\ErrorException;
+use OpenAI\Exceptions\HttpErrorException;
 use OpenAI\Exceptions\TransporterException;
 use OpenAI\Exceptions\UnserializableResponse;
 use OpenAI\ValueObjects\Transporter\BaseUri;
@@ -53,6 +54,10 @@ final class HttpTransporter implements TransporterContract
         if (str_contains($response->getHeaderLine('Content-Type'), ContentType::TEXT_PLAIN->value)) {
             return Response::from($contents, $response->getHeaders());
         }
+
+        if ($response->getStatusCode() !== 200) {
+            throw new HttpErrorException($response->getStatusCode(), $contents, $response->getReasonPhrase());
+        }   
 
         $this->throwIfJsonError($response, $contents);
 
